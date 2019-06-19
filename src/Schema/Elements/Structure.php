@@ -139,7 +139,7 @@ final class Structure implements Schema
 			if ($this->otherItems) {
 				$items += array_fill_keys($extraKeys, $this->otherItems);
 			} else {
-				$hint = Nette\Utils\ObjectHelpers::getSuggestion(array_map('strval', array_keys($items)), (string) $extraKeys[0]);
+				$hint = self::getSuggestion(array_map('strval', array_keys($items)), (string) $extraKeys[0]);
 				$s = implode("', '", array_map(function ($key) use ($context) {
 					return implode(' › ', array_merge($context->path, [$key]));
 				}, $hint ? [$extraKeys[0]] : $extraKeys));
@@ -171,5 +171,29 @@ final class Structure implements Schema
 	public function completeDefault(Context $context)
 	{
 		return $this->complete([], $context);
+	}
+
+
+	/**
+	 * Finds the best suggestion (for 8-bit encoding).
+	 * @param  (\ReflectionFunctionAbstract|\ReflectionParameter|\ReflectionClass|\ReflectionProperty|string)[]  $possibilities
+	 * @internal
+	 */
+	private static function getSuggestion(array $possibilities, string $value): ?string
+	{
+		$norm = preg_replace($re = '#^(get|set|has|is|add)(?=[A-Z])#', '', $value);
+		$best = null;
+		$min = (strlen($value) / 4 + 1) * 10 + .1;
+		foreach (array_unique($possibilities, SORT_REGULAR) as $item) {
+			$item = $item instanceof \Reflector ? $item->getName() : $item;
+			if ($item !== $value && (
+					($len = levenshtein($item, $value, 10, 11, 10)) < $min
+					|| ($len = levenshtein(preg_replace($re, '', $item), $norm, 10, 11, 10) + 20) < $min
+				)) {
+				$min = $len;
+				$best = $item;
+			}
+		}
+		return $best;
 	}
 }

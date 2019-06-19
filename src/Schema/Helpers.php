@@ -57,7 +57,7 @@ final class Helpers
 
 	public static function getPropertyType(\ReflectionProperty $prop): ?string
 	{
-		if ($type = Reflection::getPropertyType($prop)) {
+		if ($type = PHP_VERSION_ID >= 70400 && $prop->hasType() ? self::normalizeType($prop->getType()->getName(), $prop) : null) {
 			return ($prop->getType()->allowsNull() ? '?' : '') . $type;
 		} elseif ($type = preg_replace('#\s.*#', '', (string) self::parseAnnotation($prop, 'var'))) {
 			$class = Reflection::getPropertyDeclaringClass($prop);
@@ -66,6 +66,19 @@ final class Helpers
 			}, $type);
 		}
 		return null;
+	}
+
+
+	private static function normalizeType($type, $reflection)
+	{
+		$lower = strtolower($type);
+		if ($lower === 'self') {
+			return $reflection->getDeclaringClass()->getName();
+		} elseif ($lower === 'parent' && $reflection->getDeclaringClass()->getParentClass()) {
+			return $reflection->getDeclaringClass()->getParentClass()->getName();
+		} else {
+			return $type;
+		}
 	}
 
 

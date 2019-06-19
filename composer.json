@@ -16,11 +16,7 @@
 	],
 	"require": {
 		"php": ">=7.1",
-		"nette/utils": "^3.0.1"
-	},
-	"require-dev": {
-		"nette/tester": "^2.2",
-		"tracy/tracy": "^2.3"
+		"nette/utils": "^2.4.3"
 	},
 	"autoload": {
 		"classmap": ["src/"]
